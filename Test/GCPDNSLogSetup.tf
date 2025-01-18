@@ -1,4 +1,3 @@
-
 terraform {
   required_providers {
     google = {
@@ -10,7 +9,9 @@ terraform {
   required_version = ">= 0.15.0"
 }
 
-data "google_project" "project" {}
+data "google_project" "project" {
+  project_id = "Enter Project Id"
+}
 
 variable "topic-name" {
   type    = string
@@ -37,7 +38,7 @@ resource "google_pubsub_topic" "sentinel-topic" {
 
 resource "google_pubsub_subscription" "sentinel-subscription" {
   project = data.google_project.project.project_id
-  name  = "sentinel-subscription-auditlogs"
+  name  = "sentinel-subscription-firewalllogs"
   topic = var.topic-name
   depends_on = [google_pubsub_topic.sentinel-topic]
 }
@@ -45,17 +46,21 @@ resource "google_pubsub_subscription" "sentinel-subscription" {
 resource "google_logging_project_sink" "sentinel-sink" {
   project = data.google_project.project.project_id
   count = var.organization-id == "" ? 1 : 0
-  name = "audit-logs-sentinel-sink"
+  name = "firewall-logs-sentinel-sink"
   destination = "pubsub.googleapis.com/projects/${data.google_project.project.project_id}/topics/${var.topic-name}"
   depends_on = [google_pubsub_topic.sentinel-topic]
+
+  filter = "resource.type=gce_subnetwork AND logName:firewall"
   unique_writer_identity = true
 }
 
 resource "google_logging_organization_sink" "sentinel-organization-sink" {
   count = var.organization-id == "" ? 0 : 1
-  name   = "audit-logs-organization-sentinel-sink"
+  name   = "firewall-logs-organization-sentinel-sink"
   org_id = var.organization-id
   destination = "pubsub.googleapis.com/projects/${data.google_project.project.project_id}/topics/${var.topic-name}"
+
+  filter = "resource.type=gce_subnetwork AND logName:firewall"
   include_children = true
 }
 
