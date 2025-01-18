@@ -38,7 +38,7 @@ resource "google_pubsub_topic" "sentinel-topic" {
 
 resource "google_pubsub_subscription" "sentinel-subscription" {
   project = data.google_project.project.project_id
-  name  = "sentinel-subscription-firewalllogs"
+  name  = "sentinel-subscription-DNSlogs"
   topic = var.topic-name
   depends_on = [google_pubsub_topic.sentinel-topic]
 }
@@ -46,21 +46,21 @@ resource "google_pubsub_subscription" "sentinel-subscription" {
 resource "google_logging_project_sink" "sentinel-sink" {
   project = data.google_project.project.project_id
   count = var.organization-id == "" ? 1 : 0
-  name = "firewall-logs-sentinel-sink"
+  name = "DNS-logs-sentinel-sink"
   destination = "pubsub.googleapis.com/projects/${data.google_project.project.project_id}/topics/${var.topic-name}"
   depends_on = [google_pubsub_topic.sentinel-topic]
 
-  filter = "resource.type=gce_subnetwork AND logName:firewall"
+  filter = "resource.type=gce_subnetwork AND logName:DNS"
   unique_writer_identity = true
 }
 
 resource "google_logging_organization_sink" "sentinel-organization-sink" {
   count = var.organization-id == "" ? 0 : 1
-  name   = "firewall-logs-organization-sentinel-sink"
+  name   = "DNS-logs-organization-sentinel-sink"
   org_id = var.organization-id
   destination = "pubsub.googleapis.com/projects/${data.google_project.project.project_id}/topics/${var.topic-name}"
 
-  filter = "resource.type=gce_subnetwork AND logName:firewall"
+  filter = "resource.type=gce_subnetwork AND logName:DNS"
   include_children = true
 }
 
