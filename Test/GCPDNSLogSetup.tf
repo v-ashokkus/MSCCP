@@ -10,7 +10,7 @@ terraform {
 }
 
 data "google_project" "project" {
-  project_id = "Enter Project Id"
+  project_id = "tcs-ccp-project"
 }
 
 variable "topic-name" {
